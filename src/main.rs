@@ -1,11 +1,17 @@
 use ansi_term::Color;
 use clap::App;
+use std::path::PathBuf;
 use std::process::Command;
 use std::{env, fs, str};
 
 fn main() {
 
     let curr_dir = env::current_dir().unwrap();
+
+    list_dir_then_status(curr_dir)
+}
+
+fn list_dir_then_status(curr_dir: PathBuf) {
 
     let dir_list = fs::read_dir(curr_dir);
 
@@ -16,16 +22,25 @@ fn main() {
             if let Ok(successful_entry) = dir {
             
                 if let Ok(_) = env::set_current_dir(successful_entry.path()) {
-                    get_status(successful_entry);
+                    
+                    let copy_entry = successful_entry.path();
+
+                    if get_status(successful_entry) == false {
+
+                        list_dir_then_status(copy_entry);
+
+                    }
                 }
             
             }
         }
 
     }
+
 }
 
-fn get_status(dir: fs::DirEntry) {
+fn get_status(dir: fs::DirEntry) -> bool{
+
     let git_status_result = Command::new("git").args(["status", "-s", "-b"]).output();
 
     if let Ok(status) = git_status_result {
@@ -40,7 +55,15 @@ fn get_status(dir: fs::DirEntry) {
 
             analyze_result(str::from_utf8(&status.stdout).unwrap().to_string());
         }
+
+        else {
+
+            return false
+
+        }
     }
+
+    return true
 }
 
 fn analyze_result(status: String) {

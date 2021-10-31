@@ -4,18 +4,24 @@ use std::process::Command;
 use std::{env, fs, str};
 
 fn main() {
+
     let curr_dir = env::current_dir().unwrap();
 
     let dir_list = fs::read_dir(curr_dir);
 
-    if let Ok(successful_dir) = dir_list {
-        for dir in successful_dir {
+    if let Ok(successful_list) = dir_list {
+        
+        for dir in successful_list {
+            
             if let Ok(successful_entry) = dir {
+            
                 if let Ok(_) = env::set_current_dir(successful_entry.path()) {
                     get_status(successful_entry);
                 }
+            
             }
         }
+
     }
 }
 
@@ -69,7 +75,8 @@ fn analyze_result(status: String) {
 
     get_uncommitted_files(&split_str[1..]);
 
-    println!()
+    println!();
+
 }
 
 fn get_uncommitted_files(split_str: &[&str]) {

@@ -47,7 +47,6 @@ each directory listing while trying to get the git status
 */
 fn print_status_then_list(curr_dir: PathBuf) {
 
-
     if !(get_status(curr_dir.canonicalize().unwrap())) {
        
         //get dir list
@@ -83,15 +82,8 @@ fn print_status_then_list(curr_dir: PathBuf) {
 
                 //check that it can be unwrapped safely
                 //if let Ok(successful_entry) = dir {
-                    
-                    //try to successfully change the pwd
-                    if let Ok(_) = env::set_current_dir(dir.path()) {
-                        
                         //copy the path just to avoid borrowing shenanigans
                         print_status_then_list(dir.path());
-
-                    }
-                
                 //}
             }
 
@@ -101,11 +93,14 @@ fn print_status_then_list(curr_dir: PathBuf) {
 }
 
 
+
 //gets the current status of the git repo, then tries to throw it to the analysis;
 //returns true if a status was successfully gotten, otherwise false
 fn get_status(dir: PathBuf) -> bool{
 
-    //run git command
+    if let Ok(_) = env::set_current_dir(&dir) {
+    
+        //run git command
     let git_status_result = Command::new("git").args(["status", "-s", "-b"]).output();
 
     //make sure the status can be unwrapped
@@ -130,6 +125,7 @@ fn get_status(dir: PathBuf) -> bool{
 
         }
     }
+}
 
     return true
 }

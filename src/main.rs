@@ -14,10 +14,10 @@ fn main() {
     //use the clap crate to parse the arguments
     let matches = App::new("all_test").about("\nDesigned to show the status of all of the host's Git repos' statuses")
     .arg(Arg::from_usage("--pager [PAGER] 'pager to try to pipe status info into; default is 'less''"))
-    .arg(Arg::from_usage("--top [DIR] 'top-level directory to search for repos from; default is $HOME'"))
+    .arg(Arg::from_usage("--root [DIR] 'top-level directory to search for repos from; default is $HOME'"))
     .get_matches();
 
-    let pager = match matches.value_of("pager") {
+    let pager  = match matches.value_of("pager") {
                         
                     Some(page) => page,
                     
@@ -25,18 +25,13 @@ fn main() {
                     
                 };
 
-    /*
-    //get cwd
-    let curr_dir = env::current_dir().unwrap();
-    */
-
-    let curr_dir: PathBuf = PathBuf::from(
+    let curr_dir = PathBuf::from(
                     
-                    match matches.value_of("top") {
+                    match matches.value_of("root") {
 
-                        Some(dir) => dir,
+                        Some(dir) => PathBuf::from(dir),
 
-                        _ => "."  
+                        _ => env::current_dir().unwrap()  
                 }
             );
 
@@ -51,6 +46,7 @@ this function gets a directory listing, then it tries to change the pwd to
 each directory listing while trying to get the git status
 */
 fn print_status_then_list(curr_dir: PathBuf) {
+
 
     if !(get_status(curr_dir.canonicalize().unwrap())) {
        
@@ -233,7 +229,7 @@ fn get_branch(status: &String) {
 
         _ => println!(
             "  • Branch: {}",
-            Color::White.bold().paint(split_branch[0]).to_string(),
+            Color::White.bold().underline().paint(split_branch[0]).to_string(),
         )
     }
 }

@@ -3,56 +3,109 @@ use clap::App;
 use std::path::PathBuf;
 use std::process::Command;
 use std::{env, fs, str};
+use pager::Pager;
 
+/*
+the entry point of the program--will hopefully have more to in the future,
+but for now it just gets the cwd and then starts the recursion
+*/
 fn main() {
 
+    /*
+    //get cwd
     let curr_dir = env::current_dir().unwrap();
+    */
 
-    list_dir_then_status(curr_dir)
+    let curr_dir = PathBuf::from(
+                            env::var("HOME")
+                            .unwrap_or(".".to_string())
+                        );
+
+    let _process_pager = Pager::with_default_pager("less -cR").setup();
+
+    //call the listing function
+    print_status_then_list(curr_dir);
 }
 
-fn list_dir_then_status(curr_dir: PathBuf) {
+/*
+this function gets a directory listing, then it tries to change the pwd to
+each directory listing while trying to get the git status
+*/
+fn print_status_then_list(curr_dir: PathBuf) {
 
-    let dir_list = fs::read_dir(curr_dir);
+    if !(get_status(curr_dir.canonicalize().unwrap())) {
+       
+        //get dir list
+        let dir_list = fs::read_dir(curr_dir);
+                                               /* .unwrap()
+                                                .filter(|&entry| {
+                                                    entry.unwrap().metadata().unwrap().is_dir()
+                                                })
+                                                .collect::<Vec<>();*/
 
-    if let Ok(successful_list) = dir_list {
-        
-        for dir in successful_list {
+        //ensure it can be unwrapped safely
+        if let Ok(successful_list) = dir_list {
             
-            if let Ok(successful_entry) = dir {
-            
-                if let Ok(_) = env::set_current_dir(successful_entry.path()) {
+            //filter out files and dot directories (hidden directories)
+            let filtered_list = successful_list
+                                                .map(
+                                                    |entry|
+                                                        entry.unwrap()
+                                                )
+                                                .filter(
+                                                    |entry| 
+                                                        entry.metadata().unwrap().is_dir()
+
+                                                )
+                                                .filter(
+                                                    |entry| 
+                                                    !entry.path().to_str().unwrap().contains("/.")
+                                                )
+                                                .collect::<Vec<fs::DirEntry>>();
+
+            //for each direcotry or file in the unwrapped listing
+            for dir in filtered_list {
+
+                //check that it can be unwrapped safely
+                //if let Ok(successful_entry) = dir {
                     
-                    let copy_entry = successful_entry.path();
-
-                    if get_status(successful_entry) == false {
-
-                        list_dir_then_status(copy_entry);
+                    //try to successfully change the pwd
+                    if let Ok(_) = env::set_current_dir(dir.path()) {
+                        
+                        //copy the path just to avoid borrowing shenanigans
+                        print_status_then_list(dir.path());
 
                     }
-                }
-            
+                
+                //}
             }
-        }
 
+        }
     }
 
 }
 
-fn get_status(dir: fs::DirEntry) -> bool{
 
+//gets the current status of the git repo, then tries to throw it to the analysis;
+//returns true if a status was successfully gotten, otherwise false
+fn get_status(dir: PathBuf) -> bool{
+
+    //run git command
     let git_status_result = Command::new("git").args(["status", "-s", "-b"]).output();
 
+    //make sure the status can be unwrapped
     if let Ok(status) = git_status_result {
+        
         if status.stderr.is_empty() {
             println!(
                 "{}:",
                 Color::Cyan
                     .bold()
-                    .paint(dir.path().to_str().unwrap())
+                    .paint(dir.to_str().unwrap())
                     .to_string()
             );
 
+            //this function tries to analyze the stdout
             analyze_result(str::from_utf8(&status.stdout).unwrap().to_string());
         }
 
@@ -68,13 +121,17 @@ fn get_status(dir: fs::DirEntry) -> bool{
 
 fn analyze_result(status: String) {
     
+    //get the branch name (and if it's ahead/behind)
     get_branch(&status);
 
+    //split up the status so it can analyzed
     let split_str = &status
     .split("\n")
     .filter(|&line| line != "")
     .collect::<Vec<&str>>();
 
+    //if the status is one line, then there is nothing to commit
+    //i.e. the only status info is the branch name
     match split_str.len() {
         1 => println!(
             "{}",
@@ -95,7 +152,7 @@ fn analyze_result(status: String) {
     }
 
 
-
+    //try to get the uncommitted files
     get_uncommitted_files(&split_str[1..]);
 
     println!();
@@ -104,7 +161,10 @@ fn analyze_result(status: String) {
 
 fn get_uncommitted_files(split_str: &[&str]) {
 
-
+    //give each uncommitted file a color;
+    //red is for deleted files
+    //yellow is for modified files
+    //white is for unknown or untracked
     for (index, file) in split_str.iter().enumerate() {
         let indexed_str = format!("\t{}: {}", index, file);
 
@@ -120,9 +180,12 @@ fn get_uncommitted_files(split_str: &[&str]) {
     }
 }
 
+//gets the branch
 fn get_branch(status: &String) {
     let split_str = status.split("\n").collect::<Vec<&str>>();
 
+    //two situtations: either a new and yet committed branch
+    //or has uncommitted files
     let branch = match status.contains("## No commits yet on") {
         true => split_str[0].replace("## No commits yet on ", ""),
 
@@ -131,6 +194,9 @@ fn get_branch(status: &String) {
 
     let split_branch = branch.split(" ").collect::<Vec<&str>>();
 
+
+    //if split.branch is len() == 3, then there is a section saying either 
+    //[behind #] or [ahead #]
     match split_branch.len() {
         3 => println!(
             "  • Branch: {} {}",
@@ -149,6 +215,6 @@ fn get_branch(status: &String) {
         _ => println!(
             "  • Branch: {}",
             Color::White.bold().paint(split_branch[0]).to_string(),
-        ),
+        )
     }
 }

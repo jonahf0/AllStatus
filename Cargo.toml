@@ -14,3 +14,4 @@ panic = 'abort'     # Abort on panic
 [dependencies]
 clap = "2.33.3"
 ansi_term = "0.12.1"
+pager = "0.16.0"

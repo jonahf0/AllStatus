@@ -1,5 +1,5 @@
 use ansi_term::Color;
-use clap::App;
+use clap::{Arg, App};
 use std::path::PathBuf;
 use std::process::Command;
 use std::{env, fs, str};
@@ -11,17 +11,36 @@ but for now it just gets the cwd and then starts the recursion
 */
 fn main() {
 
+    //use the clap crate to parse the arguments
+    let matches = App::new("all_test").about("\nDesigned to show the status of all of the host's Git repos' statuses")
+    .arg(Arg::from_usage("--pager [PAGER] 'pager to try to pipe status info into; default is 'less''"))
+    .arg(Arg::from_usage("--top [DIR] 'top-level directory to search for repos from; default is $HOME'"))
+    .get_matches();
+
+    let pager = match matches.value_of("pager") {
+                        
+                    Some(page) => page,
+                    
+                    _ => "less -cR"
+                    
+                };
+
     /*
     //get cwd
     let curr_dir = env::current_dir().unwrap();
     */
 
-    let curr_dir = PathBuf::from(
-                            env::var("HOME")
-                            .unwrap_or(".".to_string())
-                        );
+    let curr_dir: PathBuf = PathBuf::from(
+                    
+                    match matches.value_of("top") {
 
-    let _process_pager = Pager::with_default_pager("less -cR").setup();
+                        Some(dir) => dir,
+
+                        _ => "."  
+                }
+            );
+
+    let _process_pager = Pager::with_default_pager(pager).setup();
 
     //call the listing function
     print_status_then_list(curr_dir);

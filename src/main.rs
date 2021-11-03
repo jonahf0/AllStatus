@@ -101,31 +101,31 @@ fn get_status(dir: PathBuf) -> bool{
     if let Ok(_) = env::set_current_dir(&dir) {
     
         //run git command
-    let git_status_result = Command::new("git").args(["status", "-s", "-b"]).output();
+        let git_status_result = Command::new("git").args(["status", "-s", "-b"]).output();
 
-    //make sure the status can be unwrapped
-    if let Ok(status) = git_status_result {
-        
-        if status.stderr.is_empty() {
-            println!(
-                "{}:",
-                Color::Cyan
-                    .bold()
-                    .paint(dir.to_str().unwrap())
-                    .to_string()
-            );
+        //make sure the status can be unwrapped
+        if let Ok(status) = git_status_result {
+            
+            if status.stderr.is_empty() {
+                println!(
+                    "{}:",
+                    Color::Cyan
+                        .bold()
+                        .paint(dir.to_str().unwrap())
+                        .to_string()
+                );
 
-            //this function tries to analyze the stdout
-            analyze_result(str::from_utf8(&status.stdout).unwrap().to_string());
-        }
+                //this function tries to analyze the stdout
+                analyze_result(str::from_utf8(&status.stdout).unwrap().to_string());
+            }
 
-        else {
+            else {
 
-            return false
+                return false
 
+            }
         }
     }
-}
 
     return true
 }

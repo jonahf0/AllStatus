@@ -2,6 +2,7 @@ use clap::{Arg, App};
 use std::path::PathBuf;
 use std::env;
 use pager::Pager;
+use dirs::home_dir;
 
 mod analyze_result;
 
@@ -31,14 +32,13 @@ fn main() {
 
                         Some(dir) => PathBuf::from(dir),
 
-                        _ => env::current_dir().unwrap()  
+                        _ => home_dir()
+                            .unwrap_or(env::current_dir().unwrap())
                 }
             );
 
     let _process_pager = Pager::with_default_pager(pager).setup();
 
-    let scheme = "hot";
-
     //call the listing function
-    analyze_result::print_status_then_list(curr_dir, scheme);
+    analyze_result::print_status_then_list(curr_dir);
 }

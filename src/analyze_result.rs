@@ -11,7 +11,7 @@ pub mod analyze_result {
     this function gets a directory listing, then it tries to change the pwd to
     each directory listing while trying to get the git status
     */
-    pub fn print_status_then_list(curr_dir: PathBuf) {
+    pub fn print_status_then_list(curr_dir: PathBuf, scheme: &str) {
 
         if !(get_status(curr_dir.canonicalize().unwrap())) {
         
@@ -49,7 +49,7 @@ pub mod analyze_result {
                     //check that it can be unwrapped safely
                     //if let Ok(successful_entry) = dir {
                             //copy the path just to avoid borrowing shenanigans
-                            print_status_then_list(dir.path());
+                            print_status_then_list(dir.path(), scheme);
                     //}
                 }
 
@@ -75,7 +75,7 @@ pub mod analyze_result {
                 if status.stderr.is_empty() {
                     println!(
                         "{}:",
-                        Color::Cyan
+                        Color::White
                             .bold()
                             .paint(dir.to_str().unwrap())
                             .to_string()
@@ -96,6 +96,7 @@ pub mod analyze_result {
         return true
     }
 
+    //needs to be struct not string
     fn analyze_result(status: String) {
         
         //get the branch name (and if it's ahead/behind)
@@ -112,7 +113,7 @@ pub mod analyze_result {
         match split_str.len() {
             1 => println!(
                 "{}",
-                Color::Green
+                Color::White
                     .bold()
                     .paint("  • Nothing to commit")
                     .to_string()

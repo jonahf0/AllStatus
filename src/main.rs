@@ -37,6 +37,8 @@ fn main() {
 
     let _process_pager = Pager::with_default_pager(pager).setup();
 
+    let scheme = "hot";
+
     //call the listing function
-    analyze_result::print_status_then_list(curr_dir);
+    analyze_result::print_status_then_list(curr_dir, scheme);
 }

@@ -18,6 +18,9 @@ fn main() {
     .arg(Arg::from_usage("--root [DIR] 'top-level directory to search for repos from; default is $HOME'"))
     .get_matches();
 
+    //pager will be the program that the output pipes into
+    //defaults to 'less -cR' which is the cleanest (like bat)
+    //another good one for smaller status outputs is more
     let pager  = match matches.value_of("pager") {
                         
                     Some(page) => page,
@@ -25,7 +28,8 @@ fn main() {
                     _ => "less -cR"
                     
                 };
-
+    
+    //defaults to home or current
     let curr_dir = PathBuf::from(
                     
                     match matches.value_of("root") {
@@ -37,6 +41,7 @@ fn main() {
                 }
             );
 
+    //this spawns the pager thread (I think)
     let _process_pager = Pager::with_default_pager(pager).setup();
 
     //call the listing function
